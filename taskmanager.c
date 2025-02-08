@@ -63,14 +63,15 @@ void readTasks(Tasks *tasks)
             }
 
             // check if task already has status marker
-            if (strncmp(line, "[ ]", 3) != 0 && strncmp(line, "[x]", 3) != 0)
-            // BUG: adds one every time we add a task, fix it
+            char *trimmed = line;
+            while (*trimmed == ' ')
+                trimmed++;
+            if (strncmp(trimmed, "[ ]", 3) != 0 && strncmp(trimmed, "[x]", 3) != 0)
             {
                 // add "[ ]" to the beginning
                 char temp[MAX_TASK_LEN];
                 snprintf(temp, sizeof(temp), "[ ] %s", line);
                 strcpy(current->task, temp);
-                temp[0] = '\0';
             }
             else
             {
