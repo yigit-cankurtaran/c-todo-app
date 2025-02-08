@@ -3,6 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <time.h>
+#include <unistd.h>
 
 #define MAX_TASKS 100
 #define MAX_TASK_LEN 100
@@ -18,17 +20,18 @@ typedef struct task
     char *finishDate;
     struct task *next;
     struct task *prev;
-} Task;
+} Task; // task struct
 
 typedef struct tasks
 {
     Task *head;
     Task *tail;
-} Tasks;
+} Tasks; // tasks struct
+// this creates a linked list of tasks
 
 void readTasks(Tasks *tasks)
 {
-    FILE *file = fopen("tasks.txt", "r");
+    FILE *file = fopen("tasks.txt", "r"); // read from tasks.txt file
     if (file == NULL)
     {
         // create file if it doesn't exist
@@ -39,28 +42,29 @@ void readTasks(Tasks *tasks)
             exit(-2);
         }
         fclose(file);
-        exit(-1);
+        // exit(-1);
     }
 
-    char line[MAX_TASK_LEN];
-    Task *current = NULL;
+    char line[MAX_TASK_LEN]; // line buffer, we create a buffer of 100 characters
+    Task *current = NULL;    // current task is null
 
-    while (fgets(line, sizeof(line), file))
+    while (fgets(line, sizeof(line), file)) // read line by line from file
     {
         // remove newline
         line[strcspn(line, "\n")] = 0;
 
-        if (strlen(line) > 0)
+        if (strlen(line) > 0) // if line is not empty
         {
             current = malloc(sizeof(Task)); // allocate memory for new task
             if (current == NULL)            // if memory allocation fails
             {
-                fprintf(stderr, "Memory allocation failed\n");
-                continue;
+                fprintf(stderr, "Memory allocation for task failed\n");
+                exit(-1);
             }
 
             // check if task already has status marker
             if (strncmp(line, "[ ]", 3) != 0 && strncmp(line, "[x]", 3) != 0)
+            // BUG: adds one every time we add a task, fix it
             {
                 // add "[ ]" to the beginning
                 char temp[MAX_TASK_LEN];
@@ -94,20 +98,84 @@ void readTasks(Tasks *tasks)
     fclose(file);
 }
 
+void saveTasks(Tasks *tasks)
+{
+    FILE *file = fopen("tasks.txt", "w");
+    if (file == NULL)
+    {
+        printf("Error opening tasks.txt for writing\n");
+        return;
+    }
+
+    Task *current = tasks->head;
+    while (current != NULL)
+    {
+        fprintf(file, "%s\n", current->task);
+        current = current->next;
+    }
+
+    fclose(file);
+}
+
+void addTask(Tasks *tasks, const char *taskText)
+{
+    Task *newTask = malloc(sizeof(Task));
+    if (newTask == NULL)
+    {
+        printf("Memory allocation failed\n");
+        return;
+    }
+
+    time_t now = time(NULL);
+    char timestamp[26];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+
+    snprintf(newTask->task, MAX_TASK_LEN, "[ ] %s (Created: %s)", taskText, timestamp);
+    newTask->done = false;
+    newTask->finishDate = NULL;
+    newTask->next = NULL;
+
+    if (tasks->head == NULL)
+    {
+        tasks->head = newTask;
+        tasks->tail = newTask;
+    }
+    else
+    {
+        tasks->tail->next = newTask;
+        tasks->tail = newTask;
+    }
+
+    saveTasks(tasks);
+}
+
 int main(int argc, char *argv[])
 {
     Tasks tasks;
     tasks.head = NULL;
     tasks.tail = NULL;
 
-    readTasks(&tasks);
-
+    readTasks(&tasks); // read tasks from file
     Task *current = tasks.head;
     while (current != NULL)
     {
         printf("%s\n", current->task);
         current = current->next;
     }
-
-    return 0;
+    if (argc > 1)
+    {
+        int c;
+        while ((c = getopt(argc, argv, "a:")) != -1)
+        {
+            switch (c)
+            {
+            case 'a':
+                addTask(&tasks, optarg);
+                break;
+            default:
+                printf("Usage: %s [-a task]\n", argv[0]);
+                break;
+            }
+        }
+    }
 }
