@@ -97,6 +97,13 @@ void readTasks(Tasks *tasks)
         }
     }
 
+    // if file is empty create a default task
+    void addTask(Tasks * tasks, const char *taskText);
+    if (tasks->head == NULL)
+    {
+        addTask(tasks, "default");
+    }
+
     fclose(file);
 }
 
@@ -155,8 +162,9 @@ void finishTask(Tasks *tasks, const char *taskName)
 {
     Task *current = tasks->head;
     time_t now = time(NULL);
-    char timestamp[26];
+    char timestamp[26]; // YYYY-MM-DD HH:MM:SS
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+    // don't need to use pointer bc arrays decay to pointers
 
     while (current != NULL)
     {
@@ -167,7 +175,8 @@ void finishTask(Tasks *tasks, const char *taskName)
             current->finishDate = timestamp;
             // make the prefix "[x] " for the task
             char temp[MAX_TASK_LEN];
-            snprintf(temp, sizeof(temp), "[x] %s", taskContent); // replace [ ] with [x]
+            snprintf(temp, sizeof(temp), "[x] %s (Finished: %s)", taskContent, timestamp);
+            // replace [ ] with [x], add finish time at the end
             strcpy(current->task, temp);
             // save tasks to file
             saveTasks(tasks);
