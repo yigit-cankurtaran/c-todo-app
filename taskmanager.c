@@ -150,6 +150,36 @@ void addTask(Tasks *tasks, const char *taskText)
     saveTasks(tasks);
 }
 
+void finishTask(Tasks *tasks, const char *taskName)
+{
+    Task *current = tasks->head;
+    time_t now = time(NULL);
+    char timestamp[26];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+
+    while (current != NULL)
+    {
+        char *taskContent = strstr(current->task + 4, taskName); // skip the "[ ] " prefix
+        if (taskContent != NULL && !current->done)
+        {
+            current->done = true;
+            current->finishDate = timestamp;
+            // make the prefix "[x] " for the task
+            char temp[MAX_TASK_LEN];
+            snprintf(temp, sizeof(temp), "[x] %s", taskContent); // replace [ ] with [x]
+            strcpy(current->task, temp);
+            // save tasks to file
+            saveTasks(tasks);
+            printf("Task containing '%s' marked as finished\n", taskName);
+            return;
+        }
+        current = current->next;
+    }
+
+    printf("No unfinished task containing '%s' found\n", taskName);
+    return;
+}
+
 int main(int argc, char *argv[])
 {
     Tasks tasks;
@@ -166,15 +196,18 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         int c;
-        while ((c = getopt(argc, argv, "a:")) != -1)
+        while ((c = getopt(argc, argv, "a:f:")) != -1)
         {
             switch (c)
             {
             case 'a':
                 addTask(&tasks, optarg);
                 break;
+            case 'f':
+                finishTask(&tasks, optarg);
+                break;
             default:
-                printf("Usage: %s [-a task]\n", argv[0]);
+                printf("Usage: %s [-a, -f]\n", argv[0]);
                 break;
             }
         }
