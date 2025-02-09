@@ -200,11 +200,14 @@ void deleteTask(Tasks *tasks, const char *taskName)
             else
             {
                 prev->next = current->next;
-                free(current);
-                current = prev->next;
+                if (current == tasks->tail)
+                {
+                    tasks->tail = prev;
+                }
             }
-            printf("Task '%s' deleted\n", taskName);
+            free(current);
             saveTasks(tasks);
+            printf("Task '%s' deleted\n", taskName);
             return;
         }
         prev = current;
@@ -212,7 +215,6 @@ void deleteTask(Tasks *tasks, const char *taskName)
     }
 
     printf("No task containing '%s' found\n", taskName);
-    return;
 }
 
 int main(int argc, char *argv[])
