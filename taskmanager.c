@@ -224,12 +224,7 @@ int main(int argc, char *argv[])
     tasks.tail = NULL;
 
     readTasks(&tasks); // read tasks from file
-    Task *current = tasks.head;
-    while (current != NULL)
-    {
-        printf("%s\n", current->task);
-        current = current->next;
-    }
+
     if (argc > 1)
     {
         int c;
@@ -251,5 +246,13 @@ int main(int argc, char *argv[])
                 break;
             }
         }
+    }
+    // moving the printing to the end of the function
+    // so we can print updated tasks
+    Task *current = tasks.head;
+    while (current != NULL)
+    {
+        printf("%s\n", current->task);
+        current = current->next;
     }
 }
