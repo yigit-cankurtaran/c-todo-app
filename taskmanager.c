@@ -15,6 +15,7 @@
 
 typedef struct task
 {
+    // not implementing an id bc i don't need it
     char task[MAX_TASK_LEN];
     bool done;
     char *finishDate;
@@ -180,6 +181,40 @@ void finishTask(Tasks *tasks, const char *taskName)
     return;
 }
 
+void deleteTask(Tasks *tasks, const char *taskName)
+{
+    Task *current = tasks->head;
+    Task *prev = NULL;
+
+    while (current != NULL)
+    {
+        char *taskContent = strstr(current->task + 4, taskName); // skip the "[ ] " prefix
+        if (taskContent != NULL)
+        {
+            if (prev == NULL)
+            {
+                tasks->head = current->next;
+                free(current);
+                current = tasks->head;
+            }
+            else
+            {
+                prev->next = current->next;
+                free(current);
+                current = prev->next;
+            }
+            printf("Task '%s' deleted\n", taskName);
+            saveTasks(tasks);
+            return;
+        }
+        prev = current;
+        current = current->next;
+    }
+
+    printf("No task containing '%s' found\n", taskName);
+    return;
+}
+
 int main(int argc, char *argv[])
 {
     Tasks tasks;
@@ -196,7 +231,7 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         int c;
-        while ((c = getopt(argc, argv, "a:f:")) != -1)
+        while ((c = getopt(argc, argv, "a:f:d:")) != -1)
         {
             switch (c)
             {
@@ -206,8 +241,11 @@ int main(int argc, char *argv[])
             case 'f':
                 finishTask(&tasks, optarg);
                 break;
+            case 'd':
+                deleteTask(&tasks, optarg);
+                break;
             default:
-                printf("Usage: %s [-a, -f]\n", argv[0]);
+                printf("Usage: %s [-a, -f, -d]\n", argv[0]);
                 break;
             }
         }
