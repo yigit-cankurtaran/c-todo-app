@@ -30,6 +30,10 @@ typedef struct tasks
 } Tasks; // tasks struct
 // this creates a linked list of tasks
 
+// current->next accesses next pointer of current task
+// tasks->head points to first task in list
+// tasks->tail points to last task in list
+
 void readTasks(Tasks *tasks)
 {
     FILE *file = fopen("tasks.txt", "r"); // read from tasks.txt file
@@ -69,36 +73,38 @@ void readTasks(Tasks *tasks)
                 trimmed++;
             if (strncmp(trimmed, "[ ]", 3) != 0 && strncmp(trimmed, "[x]", 3) != 0)
             {
-                // add "[ ]" to the beginning
-                char temp[MAX_TASK_LEN];
-                snprintf(temp, sizeof(temp), "[ ] %s", line);
-                strcpy(current->task, temp);
+                // if no marker, add "[ ]" to the beginning
+                char temp[MAX_TASK_LEN];                      // create a temp buffer
+                snprintf(temp, sizeof(temp), "[ ] %s", line); // buffer is the line with [ ] added in front
+                strcpy(current->task, temp);                  // copy the temp buffer to the task struct
             }
             else
             {
-                strcpy(current->task, line);
+                strcpy(current->task, line); // if it has a marker, copy the line to the task struct
             }
 
-            current->done = (strncmp(line, "[x]", 3) == 0);
-            current->finishDate = NULL;
+            current->done = (strncmp(line, "[x]", 3) == 0); // if it's done, set done to true
+            current->finishDate = NULL;                     // set finishDate to null
 
             // add to tasks list
             if (tasks->head == NULL)
             {
-                tasks->head = current;
-                tasks->tail = current;
+                tasks->head = current; // if list is empty, set head to current
+                tasks->tail = current; // and tail to current too
+                // we do this because we want to start at the beginning
             }
-            else
+            else // if list is not empty
+            // this also fires after we add the first task, this is why we do the above
             {
                 tasks->tail->next = current;
                 tasks->tail = current;
             }
-            current->next = NULL;
+            current->next = NULL; // after all the lines are done, current is the last task
         }
     }
 
     // if file is empty create a default task
-    void addTask(Tasks * tasks, const char *taskText);
+    void addTask(Tasks * tasks, const char *taskText); // function declaration
     if (tasks->head == NULL)
     {
         addTask(tasks, "default");
@@ -116,11 +122,11 @@ void saveTasks(Tasks *tasks)
         return;
     }
 
-    Task *current = tasks->head;
+    Task *current = tasks->head; // first task
     while (current != NULL)
     {
-        fprintf(file, "%s\n", current->task);
-        current = current->next;
+        fprintf(file, "%s\n", current->task); // write task + newline
+        current = current->next;              // move to next task
     }
 
     fclose(file);
