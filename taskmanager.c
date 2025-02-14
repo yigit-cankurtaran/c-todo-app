@@ -208,19 +208,24 @@ void deleteTask(Tasks *tasks, const char *taskName)
         {
             if (prev == NULL)
             {
+                // handle deletion at head
                 tasks->head = current->next;
-                free(current);
-                current = tasks->head;
+                if (tasks->tail == current)
+                {
+                    // if the task is the last one, set tail to NULL
+                    tasks->tail = NULL;
+                }
             }
             else
             {
+                // handle deletion in middle or end
                 prev->next = current->next;
                 if (current == tasks->tail)
                 {
                     tasks->tail = prev;
                 }
             }
-            free(current);
+            free(current); // fix double free error
             saveTasks(tasks);
             printf("Task '%s' deleted\n", taskName);
             return;
@@ -250,6 +255,42 @@ void showStatistics(Tasks *tasks)
     printf("Pending: %d\n", total - completed);
 }
 
+void searchTasks(Tasks *tasks, const char *keyword)
+{
+    Task *current = tasks->head;
+    while (current != NULL)
+    {
+        if (strstr(current->task, keyword))
+        {
+            printf("Found: %s\n", current->task);
+        }
+        current = current->next;
+    }
+}
+
+void filterByStatus(Tasks *tasks, bool isDone)
+{
+    Task *current = tasks->head;
+    while (current != NULL)
+    {
+        if (current->done == isDone)
+        {
+            printf("%s\n", current->task);
+        }
+        current = current->next;
+    }
+}
+
+void printTasks(Tasks *tasks)
+{
+    Task *current = tasks->head;
+    while (current != NULL)
+    {
+        printf("%s\n", current->task);
+        current = current->next;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     Tasks tasks;
@@ -261,34 +302,43 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         int c;
-        while ((c = getopt(argc, argv, "a:f:d:s")) != -1)
+        while ((c = getopt(argc, argv, "a:f:d:s:tcp")) != -1)
+        // tcp don't require arguments
         {
             switch (c)
             {
             case 'a':
                 addTask(&tasks, optarg);
+                printTasks(&tasks);
                 break;
             case 'f':
                 finishTask(&tasks, optarg);
+                printTasks(&tasks);
                 break;
             case 'd':
                 deleteTask(&tasks, optarg);
+                printTasks(&tasks);
                 break;
-            case 's':
+            case 't':
                 showStatistics(&tasks);
                 break;
+            case 's':
+                searchTasks(&tasks, optarg);
+                break;
+            case 'c':
+                filterByStatus(&tasks, true);
+                break;
+            case 'p':
+                filterByStatus(&tasks, false);
+                break;
             default:
-                printf("Usage: %s [-a, -f, -d, -s]\n", argv[0]);
+                printf("Usage: %s [-a, -f, -d, -t, -s, -c, -p]\n", argv[0]);
                 break;
             }
         }
     }
-    // moving the printing to the end of the function
-    // so we can print updated tasks
-    Task *current = tasks.head;
-    while (current != NULL)
+    else
     {
-        printf("%s\n", current->task);
-        current = current->next;
+        printTasks(&tasks);
     }
 }
