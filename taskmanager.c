@@ -9,7 +9,7 @@
 #define MAX_TASKS 100
 #define MAX_TASK_LEN 100
 
-// task format should be like this: [ ] task_name dueDate startDate finishDate
+// task format should be like this: [ ] task_name dueDate startDate finishDate
 // [ ] - task not done
 // [x] - task done
 
@@ -232,6 +232,24 @@ void deleteTask(Tasks *tasks, const char *taskName)
     printf("No task containing '%s' found\n", taskName);
 }
 
+void showStatistics(Tasks *tasks)
+{
+    int total = 0, completed = 0;
+    Task *current = tasks->head;
+
+    while (current != NULL)
+    {
+        total++;
+        if (current->done)
+            completed++;
+        current = current->next;
+    }
+
+    printf("Total tasks: %d\n", total);
+    printf("Completed: %d (%.1f%%)\n", completed, (float)completed / total * 100);
+    printf("Pending: %d\n", total - completed);
+}
+
 int main(int argc, char *argv[])
 {
     Tasks tasks;
@@ -243,7 +261,7 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         int c;
-        while ((c = getopt(argc, argv, "a:f:d:")) != -1)
+        while ((c = getopt(argc, argv, "a:f:d:s")) != -1)
         {
             switch (c)
             {
@@ -256,8 +274,11 @@ int main(int argc, char *argv[])
             case 'd':
                 deleteTask(&tasks, optarg);
                 break;
+            case 's':
+                showStatistics(&tasks);
+                break;
             default:
-                printf("Usage: %s [-a, -f, -d]\n", argv[0]);
+                printf("Usage: %s [-a, -f, -d, -s]\n", argv[0]);
                 break;
             }
         }
