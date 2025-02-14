@@ -20,8 +20,8 @@ typedef struct task
     bool done;
     char *finishDate;
     struct task *next;
-    struct task *prev;
-} Task; // task struct
+    struct task *prev; // next and prev are for doubly linked list
+} Task;                // task struct
 
 typedef struct tasks
 {
@@ -115,50 +115,50 @@ void readTasks(Tasks *tasks)
 
 void saveTasks(Tasks *tasks)
 {
-    FILE *file = fopen("tasks.txt", "w");
-    if (file == NULL)
+    FILE *file = fopen("tasks.txt", "w"); // open file for writing
+    if (file == NULL)                     // if file is not found
     {
         printf("Error opening tasks.txt for writing\n");
-        return;
+        return; // exit
     }
 
     Task *current = tasks->head; // first task
-    while (current != NULL)
+    while (current != NULL)      // while there are tasks
     {
         fprintf(file, "%s\n", current->task); // write task + newline
         current = current->next;              // move to next task
     }
 
-    fclose(file);
+    fclose(file); // close file
 }
 
 void addTask(Tasks *tasks, const char *taskText)
 {
-    Task *newTask = malloc(sizeof(Task));
-    if (newTask == NULL)
+    Task *newTask = malloc(sizeof(Task)); // allocate memory for new task
+    if (newTask == NULL)                  // if memory allocation fails
     {
         printf("Memory allocation failed\n");
-        return;
+        return; // exit
     }
 
     time_t now = time(NULL);
     char timestamp[26];
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now)); // year-month-day hour:minute:second
 
     snprintf(newTask->task, MAX_TASK_LEN, "[ ] %s (Created: %s)", taskText, timestamp);
     newTask->done = false;
     newTask->finishDate = NULL;
     newTask->next = NULL;
 
-    if (tasks->head == NULL)
+    if (tasks->head == NULL) // if list is empty
     {
         tasks->head = newTask;
-        tasks->tail = newTask;
+        tasks->tail = newTask; // head and tail are both new task, first task
     }
-    else
+    else // if list is not empty
     {
-        tasks->tail->next = newTask;
-        tasks->tail = newTask;
+        tasks->tail->next = newTask; // add new task to end of list
+        tasks->tail = newTask;       // update tail to new task
     }
 
     saveTasks(tasks);
@@ -166,13 +166,13 @@ void addTask(Tasks *tasks, const char *taskText)
 
 void finishTask(Tasks *tasks, const char *taskName)
 {
-    Task *current = tasks->head;
+    Task *current = tasks->head; // start at head of list
     time_t now = time(NULL);
     char timestamp[26]; // YYYY-MM-DD HH:MM:SS
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
-    // don't need to use pointer bc arrays decay to pointers
+    // don't need to use pointer for timestamp bc arrays decay to pointers
 
-    while (current != NULL)
+    while (current != NULL) // while there are tasks
     {
         char *taskContent = strstr(current->task + 4, taskName); // skip the "[ ] " prefix
         if (taskContent != NULL && !current->done)
@@ -180,36 +180,35 @@ void finishTask(Tasks *tasks, const char *taskName)
             current->done = true;
             current->finishDate = timestamp;
             // make the prefix "[x] " for the task
-            char temp[MAX_TASK_LEN];
+            char temp[MAX_TASK_LEN]; // create a temp buffer
             snprintf(temp, sizeof(temp), "[x] %s (Finished: %s)", taskContent, timestamp);
             // replace [ ] with [x], add finish time at the end
-            strcpy(current->task, temp);
-            // save tasks to file
+            strcpy(current->task, temp); // copy the temp buffer to the task struct
             saveTasks(tasks);
             printf("Task containing '%s' marked as finished\n", taskName);
             return;
         }
-        current = current->next;
+        current = current->next; // move to next task
     }
 
-    printf("No unfinished task containing '%s' found\n", taskName);
+    printf("No unfinished task containing '%s' found\n", taskName); // if no task is found
     return;
 }
 
 void deleteTask(Tasks *tasks, const char *taskName)
 {
-    Task *current = tasks->head;
-    Task *prev = NULL;
+    Task *current = tasks->head; // start at head of list
+    Task *prev = NULL;           // previous task pointer
 
     while (current != NULL)
     {
         char *taskContent = strstr(current->task + 4, taskName); // skip the "[ ] " prefix
         if (taskContent != NULL)
         {
-            if (prev == NULL)
+            if (prev == NULL) // if the task is the first one
             {
                 // handle deletion at head
-                tasks->head = current->next;
+                tasks->head = current->next; // set head to next task
                 if (tasks->tail == current)
                 {
                     // if the task is the last one, set tail to NULL
@@ -219,35 +218,35 @@ void deleteTask(Tasks *tasks, const char *taskName)
             else
             {
                 // handle deletion in middle or end
-                prev->next = current->next;
+                prev->next = current->next; // set previous task's next to current task's next
                 if (current == tasks->tail)
                 {
-                    tasks->tail = prev;
+                    tasks->tail = prev; // set tail to previous task
                 }
             }
-            free(current); // fix double free error
+            free(current); // fix double free error, free memory allocated for current task
             saveTasks(tasks);
             printf("Task '%s' deleted\n", taskName);
             return;
         }
-        prev = current;
-        current = current->next;
+        prev = current;          // update previous task
+        current = current->next; // move to next task
     }
 
-    printf("No task containing '%s' found\n", taskName);
+    printf("No task containing '%s' found\n", taskName); // if no task is found
 }
 
 void showStatistics(Tasks *tasks)
 {
     int total = 0, completed = 0;
-    Task *current = tasks->head;
+    Task *current = tasks->head; // start at head of list
 
-    while (current != NULL)
+    while (current != NULL) // while there are tasks
     {
         total++;
         if (current->done)
             completed++;
-        current = current->next;
+        current = current->next; // move to next task
     }
 
     printf("Total tasks: %d\n", total);
@@ -257,37 +256,38 @@ void showStatistics(Tasks *tasks)
 
 void searchTasks(Tasks *tasks, const char *keyword)
 {
-    Task *current = tasks->head;
-    while (current != NULL)
+    Task *current = tasks->head; // start at head of list
+    while (current != NULL)      // while there are tasks
     {
-        if (strstr(current->task, keyword))
+        if (strstr(current->task, keyword)) // if the task contains the keyword
         {
-            printf("Found: %s\n", current->task);
+            printf("Found: %s\n", current->task); // print the task
         }
-        current = current->next;
+        current = current->next; // move to next task
     }
 }
 
 void filterByStatus(Tasks *tasks, bool isDone)
 {
-    Task *current = tasks->head;
-    while (current != NULL)
+    // isDone is true if we want to filter by done tasks, false if we want to filter by pending tasks
+    Task *current = tasks->head; // start at head of list
+    while (current != NULL)      // while there are tasks
     {
-        if (current->done == isDone)
+        if (current->done == isDone) // if the task is done
         {
-            printf("%s\n", current->task);
+            printf("%s\n", current->task); // print the task
         }
-        current = current->next;
+        current = current->next; // move to next task
     }
 }
 
 void printTasks(Tasks *tasks)
 {
-    Task *current = tasks->head;
-    while (current != NULL)
+    Task *current = tasks->head; // start at head of list
+    while (current != NULL)      // while there are tasks
     {
-        printf("%s\n", current->task);
-        current = current->next;
+        printf("%s\n", current->task); // print the task
+        current = current->next;       // move to next task
     }
 }
 
